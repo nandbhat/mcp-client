@@ -18,23 +18,26 @@ function generateUUID(): string {
   });
 }
 
-// Global client instance for ultra-simple usage
-let globalClient: MCPClient | null = null;
-let isInitialized = false;
-let currentSessionId: string | null = null;
+// Multiple client instances based on server URL
+const clientInstances: Map<string, MCPClient> = new Map();
+const initializedServers: Set<string> = new Set();
 
 /**
  * Initialize the MCP connection (called automatically)
  */
 async function ensureInitialized(serverUrl: string) {
-  if (!globalClient) {
-    currentSessionId = generateUUID();
-    globalClient = new MCPClient(serverUrl, { sessionId: currentSessionId });
+  // Get or create client for this server URL
+  if (!clientInstances.has(serverUrl)) {
+    const sessionId = generateUUID();
+    const client = new MCPClient(serverUrl, { sessionId });
+    clientInstances.set(serverUrl, client);
   }
   
-  if (!isInitialized) {
-    await globalClient.getTools(); // This will trigger initialization
-    isInitialized = true;
+  // Initialize if not already done for this server
+  if (!initializedServers.has(serverUrl)) {
+    const client = clientInstances.get(serverUrl)!;
+    await client.getTools(); // This will trigger initialization
+    initializedServers.add(serverUrl);
   }
 }
 
@@ -49,7 +52,8 @@ export function createMCPClient(baseUrl: string, options?: { sessionId?: string 
  * Convenience function for one-off tool calls
  */
 export async function mcpCall(serverUrl: string, toolName: string, arguments_: any = {}): Promise<import('./types').MCPToolCallResult> {
-  const client = new MCPClient(serverUrl);
+  await ensureInitialized(serverUrl);
+  const client = clientInstances.get(serverUrl)!;
   return await client.callTool(toolName, arguments_);
 }
 
@@ -57,12 +61,13 @@ export async function mcpCall(serverUrl: string, toolName: string, arguments_: a
  * Convenience function for getting tools
  */
 export async function mcpGetTools(serverUrl: string): Promise<import('./types').MCPTool[]> {
-  const client = new MCPClient(serverUrl);
+  await ensureInitialized(serverUrl);
+  const client = clientInstances.get(serverUrl)!;
   return await client.getTools();
 }
 
 /**
- * Ultra-simple functions - global client instance
+ * Ultra-simple functions - maintains separate client instances per server URL
  */
 
 /**
@@ -71,7 +76,8 @@ export async function mcpGetTools(serverUrl: string): Promise<import('./types').
  */
 export async function getTools(serverUrl: string): Promise<import('./types').MCPTool[]> {
   await ensureInitialized(serverUrl);
-  return await globalClient!.getTools();
+  const client = clientInstances.get(serverUrl)!;
+  return await client.getTools();
 }
 
 /**
@@ -80,19 +86,20 @@ export async function getTools(serverUrl: string): Promise<import('./types').MCP
  */
 export async function callTool(serverUrl: string, toolName: string, arguments_: any = {}): Promise<import('./types').MCPToolCallResult> {
   await ensureInitialized(serverUrl);
-  return await globalClient!.callTool(toolName, arguments_);
+  const client = clientInstances.get(serverUrl)!;
+  return await client.callTool(toolName, arguments_);
 }
 
 /**
  * Reset the connection (useful for testing)
  */
 export function resetMCP(): void {
-  if (globalClient) {
-    globalClient.reset();
+  // Reset all client instances
+  for (const client of clientInstances.values()) {
+    client.reset();
   }
-  globalClient = null;
-  isInitialized = false;
-  currentSessionId = null;
+  clientInstances.clear();
+  initializedServers.clear();
 }
 
 // Default export
