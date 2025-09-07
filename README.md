@@ -1,16 +1,16 @@
 # MCP Client
 
-A professional JavaScript/TypeScript client library for Model Context Protocol (MCP) communication. Provides a familiar axios-like API for seamless integration with MCP servers.
+A simple, lightweight JavaScript/TypeScript client library for Model Context Protocol (MCP) communication. Designed for easy integration with a single MCP server.
 
 ## Features
 
-- **Simple API** - Familiar axios-like interface for MCP communication
-- **Multi-server support** - Connect to multiple MCP servers simultaneously
-- **Auto-initialization** - Handles MCP protocol complexity automatically
+- **Ultra-simple API** - Clean, minimal interface for MCP communication
+- **Single server focus** - Optimized for single MCP server connections
+- **Auto-initialization** - Handles MCP protocol handshake automatically
 - **Type-safe** - Full TypeScript support with comprehensive type definitions
 - **Universal compatibility** - Works in React, Vue, Node.js, and vanilla JavaScript
-- **Robust error handling** - Comprehensive error management and reporting
-- **Request correlation** - Unique UUIDs for request tracking and debugging
+- **Direct responses** - Returns data directly without wrapper objects
+- **Multiple usage patterns** - Class-based, convenience functions, and ultra-simple global functions
 
 ## Installation
 
@@ -20,7 +20,21 @@ npm install mcp-client
 
 ## Quick Start
 
-### Basic Usage
+### Ultra-simple Functions (Recommended)
+
+```typescript
+import { getTools, callTool } from 'mcp-client';
+
+// Get available tools
+const tools = await getTools('http://localhost:8000/mcp');
+console.log('Available tools:', tools);
+
+// Call a tool
+const result = await callTool('http://localhost:8000/mcp', 'greeting', { name: 'World' });
+console.log('Result:', result);
+```
+
+### Class-based Usage
 
 ```typescript
 import { MCPClient } from 'mcp-client';
@@ -29,32 +43,12 @@ import { MCPClient } from 'mcp-client';
 const client = new MCPClient('http://localhost:8000/mcp');
 
 // Get available tools
-const toolsResponse = await client.getTools();
-if (toolsResponse.status === 'success') {
-  console.log('Available tools:', toolsResponse.data);
-}
+const tools = await client.getTools();
+console.log('Available tools:', tools);
 
 // Call a tool
 const result = await client.callTool('greeting', { name: 'World' });
-if (result.status === 'success') {
-  console.log('Result:', result.data);
-}
-```
-
-### Multiple Servers
-
-```typescript
-const client = new MCPClient([
-  'http://localhost:8000/mcp',
-  'http://localhost:8001/mcp',
-  'http://localhost:8002/mcp'
-]);
-
-// Get tools from all servers
-const tools = await client.getTools();
-
-// Call tool (automatically finds the right server)
-const result = await client.callTool('greeting', { name: 'Multi-server' });
+console.log('Result:', result);
 ```
 
 ### Convenience Functions
@@ -64,55 +58,78 @@ import { mcpCall, mcpGetTools } from 'mcp-client';
 
 // One-off tool call
 const result = await mcpCall('http://localhost:8000/mcp', 'greeting', { name: 'World' });
+console.log('Result:', result);
 
 // Get tools from server
 const tools = await mcpGetTools('http://localhost:8000/mcp');
+console.log('Tools:', tools);
 ```
 
 ## API Reference
+
+### Ultra-simple Functions
+
+#### getTools(serverUrl)
+```typescript
+function getTools(serverUrl: string): Promise<MCPTool[]>
+```
+Get available tools from the MCP server. Auto-initializes the connection.
+
+#### callTool(serverUrl, toolName, arguments)
+```typescript
+function callTool(serverUrl: string, toolName: string, arguments?: any): Promise<MCPToolCallResult>
+```
+Call a tool on the MCP server. Auto-initializes the connection.
+
+#### resetMCP()
+```typescript
+function resetMCP(): void
+```
+Reset the global connection state (useful for testing).
 
 ### MCPClient Class
 
 #### Constructor
 ```typescript
-new MCPClient(urls: string | string[], options?: MCPClientOptions)
+new MCPClient(baseUrl: string, options?: { sessionId?: string })
 ```
 
 #### Methods
 
-- `getTools()` - Retrieve tools from all connected servers
-- `callTool(toolName, arguments)` - Execute a tool call (automatically finds the appropriate server)
-- `getToolsFromServer(serverUrl)` - Retrieve tools from a specific server
-- `callToolOnServer(serverUrl, toolName, arguments)` - Execute a tool call on a specific server
-- `getConnectedServers()` - Get list of currently connected servers
-- `isServerConnected(serverUrl)` - Check if a specific server is connected
-- `addServer(url)` - Add a new server to the client
-- `removeServer(url)` - Remove a server from the client
-- `reset()` - Reset all connections and clear state
+- `getTools(): Promise<MCPTool[]>` - Retrieve tools from the server
+- `callTool(toolName: string, arguments?: any): Promise<MCPToolCallResult>` - Execute a tool call
+- `reset(): void` - Reset the connection
+- `isInitialized(): boolean` - Check if client is initialized
 
-### Response Format
+### Convenience Functions
 
-All methods return a response object:
-
+#### mcpCall(serverUrl, toolName, arguments)
 ```typescript
-interface MCPClientResponse<T> {
-  data: T;
-  status: 'success' | 'error';
-  error?: string;
-  serverUrl?: string;
-}
+function mcpCall(serverUrl: string, toolName: string, arguments?: any): Promise<MCPToolCallResult>
 ```
+One-off tool call with a new client instance.
 
-### Options
+#### mcpGetTools(serverUrl)
+```typescript
+function mcpGetTools(serverUrl: string): Promise<MCPTool[]>
+```
+Get tools with a new client instance.
+
+### Types
 
 ```typescript
-interface MCPClientOptions {
-  timeout?: number;        // Request timeout in milliseconds (default: 30000)
-  retries?: number;        // Number of retry attempts (default: 3)
-  clientInfo?: {           // Client identification information
-    name: string;
-    version: string;
-  };
+interface MCPTool {
+  name: string;
+  description: string;
+  inputSchema: any;
+  outputSchema?: any;
+  _meta?: any;
+}
+
+interface MCPToolCallResult {
+  content?: Array<{ type: string; text: string }>;
+  structuredContent?: any;
+  isError?: boolean;
 }
 ```
 
@@ -121,41 +138,49 @@ interface MCPClientOptions {
 ### React
 
 ```typescript
-import { MCPClient } from 'mcp-client';
+import { getTools, callTool } from 'mcp-client';
+// or import { MCPClient } from 'mcp-client';
 
 function MyComponent() {
-  const [client] = useState(() => new MCPClient('http://localhost:8000/mcp'));
   const [tools, setTools] = useState([]);
   
   const handleGetTools = async () => {
-    const response = await client.getTools();
-    if (response.status === 'success') {
-      setTools(response.data);
-    }
+    const tools = await getTools('http://localhost:8000/mcp');
+    setTools(tools);
   };
   
-  return <button onClick={handleGetTools}>Get Tools</button>;
+  const handleCallTool = async () => {
+    const result = await callTool('http://localhost:8000/mcp', 'greeting', { name: 'React' });
+    console.log('Result:', result);
+  };
+  
+  return (
+    <div>
+      <button onClick={handleGetTools}>Get Tools</button>
+      <button onClick={handleCallTool}>Call Tool</button>
+    </div>
+  );
 }
 ```
 
 ### Vue.js
 
 ```typescript
-import { MCPClient } from 'mcp-client';
+import { getTools, callTool } from 'mcp-client';
 
 export default {
   data() {
     return {
-      client: new MCPClient('http://localhost:8000/mcp'),
       tools: []
     }
   },
   methods: {
     async getTools() {
-      const response = await this.client.getTools();
-      if (response.status === 'success') {
-        this.tools = response.data;
-      }
+      this.tools = await getTools('http://localhost:8000/mcp');
+    },
+    async callGreeting() {
+      const result = await callTool('http://localhost:8000/mcp', 'greeting', { name: 'Vue' });
+      console.log('Result:', result);
     }
   }
 }
@@ -164,16 +189,14 @@ export default {
 ### Node.js
 
 ```javascript
-const { MCPClient } = require('mcp-client');
+const { getTools, callTool } = require('mcp-client');
 
 async function main() {
-  const client = new MCPClient('http://localhost:8000/mcp');
+  const tools = await getTools('http://localhost:8000/mcp');
+  console.log('Tools:', tools);
   
-  const tools = await client.getTools();
-  console.log('Tools:', tools.data);
-  
-  const result = await client.callTool('greeting', { name: 'Node.js' });
-  console.log('Result:', result.data);
+  const result = await callTool('http://localhost:8000/mcp', 'greeting', { name: 'Node.js' });
+  console.log('Result:', result);
 }
 
 main().catch(console.error);
@@ -183,15 +206,16 @@ main().catch(console.error);
 
 ```html
 <script type="module">
-  import { MCPClient } from 'mcp-client';
-  
-  const client = new MCPClient('http://localhost:8000/mcp');
+  import { getTools, callTool } from 'mcp-client';
   
   document.getElementById('getTools').addEventListener('click', async () => {
-    const response = await client.getTools();
-    if (response.status === 'success') {
-      console.log('Tools:', response.data);
-    }
+    const tools = await getTools('http://localhost:8000/mcp');
+    console.log('Tools:', tools);
+  });
+  
+  document.getElementById('callTool').addEventListener('click', async () => {
+    const result = await callTool('http://localhost:8000/mcp', 'greeting', { name: 'Browser' });
+    console.log('Result:', result);
   });
 </script>
 ```
@@ -199,48 +223,33 @@ main().catch(console.error);
 ## Error Handling
 
 ```typescript
+import { getTools, callTool } from 'mcp-client';
+
+try {
+  const result = await callTool('http://localhost:8000/mcp', 'greeting', { name: 'World' });
+  console.log('Success:', result);
+} catch (error) {
+  console.error('Error:', error.message);
+}
+
+// Or with class-based approach
 const client = new MCPClient('http://localhost:8000/mcp');
 
 try {
-  const result = await client.callTool('greeting', { name: 'World' });
-  if (result.status === 'error') {
-    console.error('Tool error:', result.error);
-  } else {
-    console.log('Success:', result.data);
-  }
+  const tools = await client.getTools();
+  console.log('Tools:', tools);
 } catch (error) {
   console.error('Connection error:', error);
 }
 ```
 
-## Server Management
+## Key Features
 
-```typescript
-const client = new MCPClient('http://localhost:8000/mcp');
-
-// Check connected servers
-console.log('Connected:', client.getConnectedServers());
-
-// Add new server
-await client.addServer('http://localhost:8001/mcp');
-
-// Remove server
-client.removeServer('http://localhost:8001/mcp');
-
-// Reset all connections
-client.reset();
-```
-
-## Comparison with axios
-
-| Feature | axios | MCP Client |
-|---------|-------|-------------------|
-| **Purpose** | HTTP requests | MCP communication |
-| **Usage** | `axios.get(url)` | `client.getTools()` |
-| **Response** | `response.data` | `response.data` |
-| **Error handling** | `response.status` | `response.status` |
-| **Multiple endpoints** | Manual configuration | Automatic discovery |
-| **Protocol** | HTTP | MCP (JSON-RPC) |
+- **Simple**: No complex response wrappers - methods return data directly
+- **Auto-initialization**: Handles MCP protocol handshake automatically
+- **Session management**: Unique session IDs for each connection
+- **Server-Sent Events**: Proper parsing of MCP server responses
+- **Multiple patterns**: Choose from ultra-simple functions, class-based, or convenience functions
 
 ## Development
 

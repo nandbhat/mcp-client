@@ -1,10 +1,12 @@
 /**
  * React example for MCP Client
  * This shows how to use the library in a React component
+ * 
+ * Shows both ultra-simple functions and class-based usage
  */
 
 import React, { useState } from 'react';
-import { MCPClient } from 'mcp-client';
+import { MCPClient, getTools, callTool } from 'mcp-client';
 
 interface Tool {
   name: string;
@@ -24,17 +26,21 @@ function MCPExample() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState('World');
+  const [useUltraSimple, setUseUltraSimple] = useState(true);
 
   const handleGetTools = async () => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await client.getTools();
-      if (response.status === 'success') {
-        setTools(response.data);
+      if (useUltraSimple) {
+        // Ultra-simple function - direct data return
+        const tools = await getTools('http://localhost:8000/mcp');
+        setTools(tools);
       } else {
-        setError(response.error || 'Failed to get tools');
+        // Class-based approach - direct data return
+        const tools = await client.getTools();
+        setTools(tools);
       }
     } catch (err: any) {
       setError(err.message);
@@ -48,14 +54,17 @@ function MCPExample() {
     setError(null);
     
     try {
-      const response = await client.callTool('greeting', { name });
-      if (response.status === 'success') {
-        const greeting = response.data.content?.[0]?.text || 
-                        response.data.structuredContent?.result;
-        setResult(greeting);
+      let result;
+      if (useUltraSimple) {
+        // Ultra-simple function - direct data return
+        result = await callTool('http://localhost:8000/mcp', 'greeting', { name });
       } else {
-        setError(response.error || 'Failed to call tool');
+        // Class-based approach - direct data return
+        result = await client.callTool('greeting', { name });
       }
+      
+      const greeting = result.content?.[0]?.text || result.structuredContent?.result;
+      setResult(greeting);
     } catch (err: any) {
       setError(err.message);
     }
@@ -68,6 +77,16 @@ function MCPExample() {
       <h1>MCP Client - React Example</h1>
       
       <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', marginBottom: '10px' }}>
+          <input
+            type="checkbox"
+            checked={useUltraSimple}
+            onChange={(e) => setUseUltraSimple(e.target.checked)}
+            style={{ marginRight: '10px' }}
+          />
+          Use Ultra-Simple Functions (recommended)
+        </label>
+        
         <button 
           onClick={handleGetTools} 
           disabled={loading}
@@ -125,7 +144,33 @@ function MCPExample() {
       )}
 
       <div style={{ marginTop: '30px', padding: '15px', backgroundColor: '#f0f0f0', borderRadius: '5px' }}>
-        <h3>Code Example:</h3>
+        <h3>Code Examples:</h3>
+        
+        <h4>Ultra-Simple Functions (Recommended):</h4>
+        <pre style={{ fontSize: '12px', overflow: 'auto', marginBottom: '20px' }}>
+{`import { getTools, callTool } from 'mcp-client';
+
+function MyComponent() {
+  const handleGetTools = async () => {
+    const tools = await getTools('http://localhost:8000/mcp');
+    console.log('Tools:', tools);
+  };
+  
+  const handleCallTool = async () => {
+    const result = await callTool('http://localhost:8000/mcp', 'greeting', { name: 'World' });
+    console.log('Result:', result);
+  };
+  
+  return (
+    <div>
+      <button onClick={handleGetTools}>Get Tools</button>
+      <button onClick={handleCallTool}>Call Tool</button>
+    </div>
+  );
+}`}
+        </pre>
+        
+        <h4>Class-Based Approach:</h4>
         <pre style={{ fontSize: '12px', overflow: 'auto' }}>
 {`import { MCPClient } from 'mcp-client';
 
@@ -133,17 +178,13 @@ function MyComponent() {
   const [client] = useState(() => new MCPClient('http://localhost:8000/mcp'));
   
   const handleGetTools = async () => {
-    const response = await client.getTools();
-    if (response.status === 'success') {
-      console.log('Tools:', response.data);
-    }
+    const tools = await client.getTools();
+    console.log('Tools:', tools);
   };
   
   const handleCallTool = async () => {
-    const response = await client.callTool('greeting', { name: 'World' });
-    if (response.status === 'success') {
-      console.log('Result:', response.data);
-    }
+    const result = await client.callTool('greeting', { name: 'World' });
+    console.log('Result:', result);
   };
   
   return (

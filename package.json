@@ -1,6 +1,6 @@
 {
   "name": "@nandbhat/mcp-client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A standalone JavaScript/TypeScript library for MCP (Model Context Protocol) communication, similar to axios but for MCP servers.",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",

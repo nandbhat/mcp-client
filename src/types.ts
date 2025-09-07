@@ -6,23 +6,14 @@ export interface MCPTool {
   name: string;
   description: string;
   inputSchema: any;
-  _meta?: {
-    serverUrl?: string;
-    [key: string]: any;
-  };
+  outputSchema?: any;
+  _meta?: any;
 }
 
 export interface MCPToolCallResult {
-  content?: Array<{
-    type: string;
-    text: string;
-  }>;
-  structuredContent?: {
-    result: any;
-    [key: string]: any;
-  };
+  content?: Array<{ type: string; text: string }>;
+  structuredContent?: any;
   isError?: boolean;
-  [key: string]: any;
 }
 
 export interface ClientInfo {

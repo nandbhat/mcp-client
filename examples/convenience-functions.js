@@ -13,22 +13,13 @@ async function main() {
     console.log('Making one-off tool call...');
     const result = await mcpCall('http://localhost:8000/mcp', 'greeting', { name: 'Convenience' });
     
-    if (result.status === 'success') {
-      const greeting = result.data.content?.[0]?.text || result.data.structuredContent?.result;
-      console.log('Tool call result:', greeting);
-    } else {
-      console.log('Tool call failed:', result.error);
-    }
+    const greeting = result.content?.[0]?.text || result.structuredContent?.result;
+    console.log('Tool call result:', greeting);
     
     // Get tools (one-off)
     console.log('\nGetting tools (one-off)...');
     const tools = await mcpGetTools('http://localhost:8000/mcp');
-    
-    if (tools.status === 'success') {
-      console.log('Available tools:', tools.data.map(t => t.name));
-    } else {
-      console.log('Failed to get tools:', tools.error);
-    }
+    console.log('Available tools:', tools.map(t => t.name));
     
     console.log('\nConvenience functions example completed!');
     console.log('\nThese functions are perfect for simple one-off operations');

@@ -1,66 +1,55 @@
 /**
- * Multiple servers example for MCP Client
- * Run with: node examples/multiple-servers.js
+ * Ultra-simple functions example for MCP Client
+ * Run with: node examples/ultra-simple.js
+ * 
+ * This example shows the recommended ultra-simple usage pattern
+ * with global functions that handle everything automatically.
  */
 
-const { MCPClient } = require('../dist/index.js');
+const { getTools, callTool, resetMCP } = require('../dist/index.js');
 
 async function main() {
-  console.log('🌐 MCP Client - Multiple Servers Example\n');
+  console.log('🚀 MCP Client - Ultra-Simple Functions Example\n');
   
   try {
-    // Create client with multiple servers
-    const client = new MCPClient([
-      'http://localhost:8000/mcp',
-      'http://localhost:8001/mcp',
-      'http://localhost:8002/mcp'
-    ]);
+    // Get available tools (auto-initializes connection)
+    console.log('📋 Getting tools...');
+    const tools = await getTools('http://localhost:8000/mcp');
+    console.log('✅ Available tools:', tools.map(t => t.name));
     
-    // Get tools from all servers
-    console.log('📋 Getting tools from all servers...');
-    const toolsResponse = await client.getTools();
+    // Call a tool (reuses the same connection)
+    console.log('\n🔧 Calling greeting tool...');
+    const result = await callTool('http://localhost:8000/mcp', 'greeting', { name: 'Ultra-Simple' });
     
-    if (toolsResponse.status === 'success') {
-      console.log('✅ Total tools found:', toolsResponse.data.length);
+    const greeting = result.content?.[0]?.text || result.structuredContent?.result;
+    console.log('✅ Greeting result:', greeting);
+    
+    // Call another tool
+    if (tools.some(t => t.name === 'echo')) {
+      console.log('\n📢 Calling echo tool...');
+      const echoResult = await callTool('http://localhost:8000/mcp', 'echo', { message: 'Hello from ultra-simple example!' });
       
-      // Group tools by server
-      const toolsByServer = {};
-      toolsResponse.data.forEach(tool => {
-        const serverUrl = tool._meta?.serverUrl || 'unknown';
-        if (!toolsByServer[serverUrl]) {
-          toolsByServer[serverUrl] = [];
-        }
-        toolsByServer[serverUrl].push(tool.name);
-      });
-      
-      console.log('\n📊 Tools by server:');
-      Object.entries(toolsByServer).forEach(([server, tools]) => {
-        console.log(`  ${server}: ${tools.join(', ')}`);
-      });
-    } else {
-      console.log('❌ Failed to get tools:', toolsResponse.error);
+      const echoMessage = echoResult.content?.[0]?.text || echoResult.structuredContent?.result;
+      console.log('✅ Echo result:', echoMessage);
     }
     
-    // Show connected servers
-    console.log('\n🔗 Connected servers:', client.getConnectedServers());
-    
-    // Try to call a tool (will auto-find the right server)
-    console.log('\n🔧 Calling greeting tool (auto-find server)...');
-    const result = await client.callTool('greeting', { name: 'Multi-server' });
-    
-    if (result.status === 'success') {
-      const greeting = result.data.content?.[0]?.text || result.data.structuredContent?.result;
-      console.log('✅ Greeting result:', greeting);
-      console.log('📍 Called on server:', result.serverUrl);
-    } else {
-      console.log('❌ Failed to call tool:', result.error);
-    }
-    
-    console.log('\n🎉 Multiple servers example completed!');
+    console.log('\n🎉 Ultra-simple functions example completed!');
+    console.log('\n💡 Key benefits:');
+    console.log('   - No client instance needed');
+    console.log('   - Auto-initialization');
+    console.log('   - Connection reuse');
+    console.log('   - Direct data return (no wrapper objects)');
+    console.log('   - Perfect for simple scripts and quick integrations');
     
   } catch (error) {
     console.error('❌ Error:', error.message);
-    console.log('\n💡 Make sure at least one MCP server is running');
+    console.log('\n💡 Make sure the MCP server is running on http://localhost:8000/mcp');
+  } finally {
+    // Optional: Reset the global client state
+    // This is mainly useful for testing or when switching servers
+    console.log('\n🔄 Resetting connection state...');
+    resetMCP();
+    console.log('✅ Connection state reset');
   }
 }
 

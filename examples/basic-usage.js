@@ -14,25 +14,15 @@ async function main() {
     
     // Get tools
     console.log('Getting tools...');
-    const toolsResponse = await client.getTools();
-    
-    if (toolsResponse.status === 'success') {
-      console.log('Available tools:', toolsResponse.data.map(t => t.name));
-    } else {
-      console.log('Failed to get tools:', toolsResponse.error);
-      return;
-    }
+    const tools = await client.getTools();
+    console.log('Available tools:', tools.map(t => t.name));
     
     // Call a tool
     console.log('\nCalling greeting tool...');
     const result = await client.callTool('greeting', { name: 'World' });
     
-    if (result.status === 'success') {
-      const greeting = result.data.content?.[0]?.text || result.data.structuredContent?.result;
-      console.log('Greeting result:', greeting);
-    } else {
-      console.log('Failed to call tool:', result.error);
-    }
+    const greeting = result.content?.[0]?.text || result.structuredContent?.result;
+    console.log('Greeting result:', greeting);
     
     console.log('\nExample completed successfully!');
     
