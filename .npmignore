@@ -1,0 +1,45 @@
+# Source files
+src/
+*.ts
+!dist/**/*.d.ts
+
+# Test files
+__tests__/
+*.test.*
+*.spec.*
+jest.config.js
+
+# Development files
+.eslintrc.json
+tsconfig.json
+rollup.config.js
+.claude/
+
+# Git files
+.git/
+.gitignore
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Examples
+examples/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies
+node_modules/
+
+# Lock files (included by default but making it explicit)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml

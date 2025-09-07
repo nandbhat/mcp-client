@@ -1,6 +1,6 @@
 {
-  "name": "mcp-client",
-  "version": "1.0.0",
+  "name": "@nandbhat/mcp-client",
+  "version": "0.1.0",
   "description": "A standalone JavaScript/TypeScript library for MCP (Model Context Protocol) communication, similar to axios but for MCP servers.",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -11,7 +11,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "rollup -c",
+    "build": "rollup -c --bundleConfigAsCjs",
     "dev": "rollup -c -w",
     "test": "jest",
     "lint": "eslint src/**/*.ts",
@@ -27,16 +27,16 @@
     "ai",
     "llm"
   ],
-  "author": "",
+  "author": "nandbhat",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/username/mcp-client.git"
+    "url": "git+https://github.com/nandbhat/mcp-client.git"
   },
   "bugs": {
-    "url": "https://github.com/username/mcp-client/issues"
+    "url": "https://github.com/nandbhat/mcp-client/issues"
   },
-  "homepage": "https://github.com/username/mcp-client#readme",
+  "homepage": "https://github.com/nandbhat/mcp-client#readme",
   "devDependencies": {
     "@rollup/plugin-commonjs": "^25.0.7",
     "@rollup/plugin-node-resolve": "^15.2.3",
